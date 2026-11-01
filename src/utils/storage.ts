@@ -1,22 +1,12 @@
-import { SavedDesign, ComponentType, ComponentSettings } from '../types/playground';
-import { getDefaultSettings } from '../data/initialComponents';
 
-const STORAGE_KEY = 'ui-playground-designs';
+import {
+  SavedDesign,
+  ComponentType,
+  ComponentSettings,
+} from '../types/playground';
+import { supabase } from '../lib/supabase';
 
-export function getSavedDesigns(): SavedDesign[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return seedStarterDesigns();
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    return [];
-  } catch (e) {
-    console.error('Failed to load saved designs from localStorage', e);
-    return [];
-  }
-}
-
-export function saveDesign(data: {
+interface SaveDesignData {
   name: string;
   componentType: ComponentType;
   settings: ComponentSettings;
@@ -24,88 +14,127 @@ export function saveDesign(data: {
     tablet?: Partial<ComponentSettings>;
     mobile?: Partial<ComponentSettings>;
   };
-}): SavedDesign {
-  const existing = getSavedDesigns();
-  const newDesign: SavedDesign = {
-    id: 'design-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
+}
+
+interface SavedDesignRow {
+  id: string;
+  name: string;
+  component_type: ComponentType;
+  category: 'basic' | 'ui' | 'advanced';
+  created_at: string;
+  settings: ComponentSettings;
+  responsive: SavedDesign['responsive'];
+}
+
+function mapRow(row: SavedDesignRow): SavedDesign {
+  return {
+    id: row.id,
+    name: row.name,
+    componentType: row.component_type,
+    category: row.category,
+    createdAt: row.created_at,
+    settings: row.settings,
+    responsive: row.responsive ?? undefined,
+  };
+}
+
+export async function getSavedDesigns(): Promise<SavedDesign[]> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) throw new Error('Please log in to view your saved designs.');
+
+  const { data, error } = await supabase
+    .from('saved_designs')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => mapRow(row as SavedDesignRow));
+}
+
+export async function saveDesign(
+  data: SaveDesignData
+): Promise<SavedDesign> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) throw new Error('Please log in before saving a design.');
+
+  const id =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `design-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+  const payload = {
+    id,
+    user_id: user.id,
     name: data.name.trim() || 'Untitled Design',
-    componentType: data.componentType,
+    component_type: data.componentType,
     category: 'basic',
-    createdAt: new Date().toISOString(),
-    settings: JSON.parse(JSON.stringify(data.settings)),
-    responsive: data.responsive ? JSON.parse(JSON.stringify(data.responsive)) : undefined,
+    settings: data.settings,
+    responsive: data.responsive ?? null,
   };
 
-  const updated = [newDesign, ...existing];
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Failed to save design to localStorage', e);
-  }
-  return newDesign;
+  const { data: savedRow, error } = await supabase
+    .from('saved_designs')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+
+  return mapRow(savedRow as SavedDesignRow);
 }
 
-export function deleteDesign(id: string): boolean {
-  try {
-    const existing = getSavedDesigns();
-    const filtered = existing.filter((item) => item.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    return true;
-  } catch (e) {
-    console.error('Failed to delete design from localStorage', e);
-    return false;
-  }
+export async function deleteDesign(id: string): Promise<boolean> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) throw new Error('Please log in to delete a design.');
+
+  const { error } = await supabase
+    .from('saved_designs')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (error) throw error;
+
+  return true;
 }
 
-export function getDesignById(id: string): SavedDesign | undefined {
-  const all = getSavedDesigns();
-  return all.find((d) => d.id === id);
-}
+export async function getDesignById(
+  id: string
+): Promise<SavedDesign | undefined> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-function seedStarterDesigns(): SavedDesign[] {
-  const cardDefaults = getDefaultSettings('card');
-  const buttonDefaults = getDefaultSettings('button');
-  const inputDefaults = getDefaultSettings('input');
+  if (userError) throw userError;
+  if (!user) throw new Error('Please log in to view this design.');
 
-  const starters: SavedDesign[] = [
-    {
-      id: 'starter-neon-card',
-      name: 'Cyberpunk Glow Card',
-      componentType: 'card',
-      category: 'basic',
-      createdAt: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
-      settings: {
-        ...cardDefaults,
-        content: {
-          ...cardDefaults.content,
-          heading: 'Create Something Beautiful',
-          description: 'A simple and powerful way to turn your ideas into stunning user interfaces.',
-          buttonText: 'Get Started →',
-        },
-      },
-    },
-    {
-      id: 'starter-gradient-btn',
-      name: 'Vibrant Action Button',
-      componentType: 'button',
-      category: 'basic',
-      createdAt: new Date(Date.now() - 3600 * 1000 * 12).toISOString(),
-      settings: buttonDefaults,
-    },
-    {
-      id: 'starter-modern-input',
-      name: 'Dark Navy Search Input',
-      componentType: 'input',
-      category: 'basic',
-      createdAt: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
-      settings: inputDefaults,
-    },
-  ];
+  const { data, error } = await supabase
+    .from('saved_designs')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle();
 
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(starters));
-  } catch (e) {
-    // fallback
-  }
-  return starters;
+  if (error) throw error;
+  if (!data) return undefined;
+
+  return mapRow(data as SavedDesignRow);
 }
