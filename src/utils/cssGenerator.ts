@@ -1,3 +1,4 @@
+
 import { ComponentSettings, ComponentType } from '../types/playground';
 import { ANIMATION_PRESETS } from '../data/animationPresets';
 
@@ -83,9 +84,11 @@ export function generateCss(
   if (settings.typography.lineHeight) lines.push(`  line-height: ${settings.typography.lineHeight};`);
   if (settings.typography.letterSpacing) lines.push(`  letter-spacing: ${settings.typography.letterSpacing}px;`);
   if (settings.typography.textAlign) lines.push(`  text-align: ${settings.typography.textAlign};`);
+
   if (settings.typography.textTransform && settings.typography.textTransform !== 'none') {
     lines.push(`  text-transform: ${settings.typography.textTransform};`);
   }
+
   if (settings.typography.textDecoration && settings.typography.textDecoration !== 'none') {
     lines.push(`  text-decoration: ${settings.typography.textDecoration};`);
   }
@@ -107,6 +110,7 @@ export function generateCss(
 
   // Box Shadow
   const shadow = settings.shadow;
+
   if (shadow.blur > 0 || shadow.spread > 0 || shadow.x !== 0 || shadow.y !== 0) {
     const insetStr = shadow.inset ? 'inset ' : '';
     lines.push(`  box-shadow: ${insetStr}${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.spread}px ${shadow.color};`);
@@ -115,10 +119,18 @@ export function generateCss(
   // Transform
   const t = settings.transform;
   const transforms: string[] = [];
-  if (t.translateX !== 0 || t.translateY !== 0) transforms.push(`translate(${t.translateX}px, ${t.translateY}px)`);
+
+  if (t.translateX !== 0 || t.translateY !== 0) {
+    transforms.push(`translate(${t.translateX}px, ${t.translateY}px)`);
+  }
+
   if (t.scale !== 1) transforms.push(`scale(${t.scale})`);
   if (t.rotate !== 0) transforms.push(`rotate(${t.rotate}deg)`);
-  if (t.skewX !== 0 || t.skewY !== 0) transforms.push(`skew(${t.skewX}deg, ${t.skewY}deg)`);
+
+  if (t.skewX !== 0 || t.skewY !== 0) {
+    transforms.push(`skew(${t.skewX}deg, ${t.skewY}deg)`);
+  }
+
   if (transforms.length > 0) {
     lines.push(`  transform: ${transforms.join(' ')};`);
   }
@@ -139,6 +151,7 @@ export function generateCss(
     const presetData = ANIMATION_PRESETS[anim.preset];
     const keyframesName = presetData ? presetData.keyframesName : anim.preset;
     const fill = anim.fillMode || 'both';
+
     lines.push(
       `  animation: ${keyframesName} ${anim.duration}ms ${anim.timingFunction} ${anim.delay}ms ${anim.iterationCount} ${anim.direction} ${fill};`
     );
@@ -149,18 +162,23 @@ export function generateCss(
   // Hover States
   if (settings.hover.enabled) {
     const hoverLines: string[] = [];
+
     if (settings.hover.bgColor) hoverLines.push(`  background: ${settings.hover.bgColor};`);
     if (settings.hover.textColor) hoverLines.push(`  color: ${settings.hover.textColor};`);
     if (settings.hover.borderColor) hoverLines.push(`  border-color: ${settings.hover.borderColor};`);
+
     if (settings.hover.shadowBlur > 0) {
       hoverLines.push(`  box-shadow: 0 12px ${settings.hover.shadowBlur}px ${settings.hover.shadowColor};`);
     }
+
     const hoverTransforms: string[] = [];
+
     if (settings.hover.translateY !== 0) hoverTransforms.push(`translateY(${settings.hover.translateY}px)`);
     if (settings.hover.scale !== 1) hoverTransforms.push(`scale(${settings.hover.scale})`);
     if (settings.hover.rotate !== 0) hoverTransforms.push(`rotate(${settings.hover.rotate}deg)`);
+
     if (hoverTransforms.length > 0) {
-      hoverLines.push(`  transform: ${hoverTransforms.join(' ')};`);
+      hoverLines.push(`  transform: ${hoverTransforms.join(' ')} !important;`);
     }
 
     if (hoverLines.length > 0) {
@@ -176,6 +194,7 @@ export function generateCss(
   // Responsive Media Queries (Tablet & Mobile)
   if (tabletSettings && Object.keys(tabletSettings).length > 0) {
     const tabLines: string[] = [];
+
     if (tabletSettings.typography?.fontSize) tabLines.push(`    font-size: ${tabletSettings.typography.fontSize}px;`);
     if (tabletSettings.layout?.padding !== undefined) tabLines.push(`    padding: ${tabletSettings.layout.padding}px;`);
     if (tabletSettings.layout?.gap !== undefined) tabLines.push(`    gap: ${tabletSettings.layout.gap}px;`);
@@ -188,6 +207,7 @@ export function generateCss(
 
   if (mobileSettings && Object.keys(mobileSettings).length > 0) {
     const mobLines: string[] = [];
+
     if (mobileSettings.typography?.fontSize) mobLines.push(`    font-size: ${mobileSettings.typography.fontSize}px;`);
     if (mobileSettings.layout?.padding !== undefined) mobLines.push(`    padding: ${mobileSettings.layout.padding}px;`);
     if (mobileSettings.layout?.gap !== undefined) mobLines.push(`    gap: ${mobileSettings.layout.gap}px;`);
@@ -201,6 +221,7 @@ export function generateCss(
   // Animation Keyframes definition if preset is active
   if (settings.animation.preset && settings.animation.preset !== 'none') {
     const foundPreset = ANIMATION_PRESETS[settings.animation.preset];
+
     if (foundPreset && foundPreset.cssKeyframes) {
       fullCss += `\n\n${foundPreset.cssKeyframes}`;
     }

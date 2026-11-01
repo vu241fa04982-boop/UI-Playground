@@ -1,0 +1,52 @@
+.ui-button {
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  width: auto;
+  max-width: 300px;
+  min-width: 280px;
+  padding: 18px;
+  background: linear-gradient(135deg, #10B981, #2563EB);
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+  border-radius: 24px;
+  border: none;
+  box-shadow: 0px 6px 26px 0px rgba(124, 58, 237, 0.45);
+  transition: all 400ms ease;
+  animation: uiBounce 1000ms ease-in-out 0ms infinite normal both;
+}
+
+.ui-button:hover {
+  background: #EC4899;
+  color: #7C3AED;
+  box-shadow: 0 12px 24px rgba(236, 72, 153, 0.55);
+  transform: translateY(-2px) scale(1.16) rotate(30deg);
+}
+
+@media (max-width: 768px) {
+  .ui-button {
+    font-size: 16px;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ui-button {
+    font-size: 15px;
+    padding: 16px;
+  }
+}
+
+@keyframes uiBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-18px); }
+  60% { transform: translateY(-9px); }
+}
